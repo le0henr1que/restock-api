@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro</title>
+    <style>
+        {{BASE_CSS}}
+        {{CSS}}
+    </style>
+</head>
+
+<body>
+    <div class="main">
+        <header>
+            <h2 class="title uppercase text-shadow">Cadastro Realizado</h2>
+            <div class="image-container">
+                <img class="image" src="{{EMAIL_IMAGE}}" alt="Ilustração de pessoa recebendo um email"/>
+            </div>
+        </header>
+
+        <section class="text-grey-color" aria-labelledby="registration-confirmation">
+            <div class="text-shadow">
+                <h3 id="registration-confirmation" class="font-16">Olá, {{userName}}</h3>
+                <p>Seu cadastro foi realizado no site da {{projectName}}. Utilize a senha abaixo para acessar o sistema:</p>
+            </div>
+
+            <div class="your-password">
+                <h4 class="full-width">{{userPassword}}</h4>
+            </div>
+            <div>
+                <a target="_blank" href="{{link}}" class="access-button">
+                    Entrar no Painel
+                </a>
+            </div>
+        </section>
+
+        <footer>
+            <p class="margin-top-24 text-grey-color text-shadow">Atenciosamente, {{projectName}}</p>
+        </footer>
+    </div>
+</body>
+
+</html>

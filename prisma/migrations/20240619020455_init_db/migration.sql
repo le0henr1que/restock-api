@@ -1,0 +1,130 @@
+-- CreateEnum
+CREATE TYPE "RoleEnum" AS ENUM ('USER', 'ADMIN');
+
+-- CreateEnum
+CREATE TYPE "StatusEnum" AS ENUM ('ACTIVE', 'PENDING', 'INACTIVE');
+
+-- CreateEnum
+CREATE TYPE "LogActionEnum" AS ENUM ('LOGIN', 'CREATE', 'UPDATE', 'DELETE', 'INACTIVE', 'REACTIVE', 'LOGOUT', 'PASSWORD_RESET', 'FIRST_ACCESS', 'RESEND_EMAIL', 'CHANGE_PERMISSION', 'CHANGE_PASSWORD', 'SEND_EMAIL_RECOVERY_PASSWORD', 'CHANGE_PERSONAL_INFORMATION', 'REFRESH_TOKEN', 'BLOCK', 'UNBLOCK', 'MULTIPLE_LOGIN', 'DISABLED_USER');
+
+-- CreateEnum
+CREATE TYPE "LogStatusEnum" AS ENUM ('SUCCESS', 'ERROR');
+
+-- CreateEnum
+CREATE TYPE "MethodEnum" AS ENUM ('GET', 'POST', 'PUT', 'PATCH', 'DELETE');
+
+-- CreateEnum
+CREATE TYPE "AssignmentsEnum" AS ENUM ('USER');
+
+-- CreateTable
+CREATE TABLE "TB_AUDIT_LOG" (
+    "id" SERIAL NOT NULL,
+    "ip" VARCHAR(255) NOT NULL,
+    "email" VARCHAR(255) NOT NULL,
+    "url" VARCHAR(2000) NOT NULL,
+    "information" VARCHAR(2000) NOT NULL,
+    "createdAt" TIMESTAMPTZ(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "action" "LogActionEnum" NOT NULL,
+    "status" "LogStatusEnum" NOT NULL,
+    "method" "MethodEnum" NOT NULL,
+
+    CONSTRAINT "TB_AUDIT_LOG_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "TB_USER" (
+    "_id" TEXT NOT NULL,
+    "name" VARCHAR(255) NOT NULL,
+    "email" VARCHAR(255) NOT NULL,
+    "password" VARCHAR(255) NOT NULL,
+    "loginAttempts" INTEGER NOT NULL DEFAULT 0,
+    "blocked" BOOLEAN NOT NULL DEFAULT false,
+    "ip" VARCHAR(100),
+    "createdAt" TIMESTAMPTZ(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "refreshToken" VARCHAR(255),
+    "recoveryToken" VARCHAR(255),
+    "updatedAt" TIMESTAMPTZ(3),
+    "deletedAt" TIMESTAMPTZ(3),
+    "version" INTEGER NOT NULL DEFAULT 1,
+    "mediaId" TEXT,
+    "status" "StatusEnum" NOT NULL DEFAULT 'ACTIVE',
+
+    CONSTRAINT "TB_USER_pkey" PRIMARY KEY ("_id")
+);
+
+-- CreateTable
+CREATE TABLE "TB_USER_ASSIGNMENT" (
+    "_id" TEXT NOT NULL,
+    "create" BOOLEAN NOT NULL DEFAULT false,
+    "read" BOOLEAN NOT NULL DEFAULT false,
+    "update" BOOLEAN NOT NULL DEFAULT false,
+    "delete" BOOLEAN NOT NULL DEFAULT false,
+    "userId" VARCHAR NOT NULL,
+    "assignmentsId" VARCHAR NOT NULL,
+
+    CONSTRAINT "TB_USER_ASSIGNMENT_pkey" PRIMARY KEY ("_id")
+);
+
+-- CreateTable
+CREATE TABLE "TB_ASSIGNMENT" (
+    "_id" TEXT NOT NULL,
+    "createdAt" TIMESTAMPTZ(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "deletedAt" TIMESTAMPTZ(3),
+    "name" "AssignmentsEnum" NOT NULL,
+    "status" "StatusEnum" NOT NULL DEFAULT 'ACTIVE',
+
+    CONSTRAINT "TB_ASSIGNMENT_pkey" PRIMARY KEY ("_id")
+);
+
+-- CreateTable
+CREATE TABLE "TB_USER_ROLE" (
+    "_id" TEXT NOT NULL,
+    "userId" VARCHAR NOT NULL,
+    "roleId" VARCHAR NOT NULL,
+
+    CONSTRAINT "TB_USER_ROLE_pkey" PRIMARY KEY ("_id")
+);
+
+-- CreateTable
+CREATE TABLE "TB_ROLE" (
+    "_id" TEXT NOT NULL,
+    "createdAt" TIMESTAMPTZ(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "deletedAt" TIMESTAMPTZ(3),
+    "name" "RoleEnum" NOT NULL,
+    "status" "StatusEnum" NOT NULL DEFAULT 'ACTIVE',
+
+    CONSTRAINT "TB_ROLE_pkey" PRIMARY KEY ("_id")
+);
+
+-- CreateTable
+CREATE TABLE "TB_MEDIA" (
+    "_id" TEXT NOT NULL,
+    "url" VARCHAR(800) NOT NULL,
+    "createdDate" TIMESTAMPTZ(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "TB_MEDIA_pkey" PRIMARY KEY ("_id")
+);
+
+-- CreateIndex
+CREATE UNIQUE INDEX "TB_USER_email_key" ON "TB_USER"("email");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "TB_ASSIGNMENT_name_key" ON "TB_ASSIGNMENT"("name");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "TB_ROLE_name_key" ON "TB_ROLE"("name");
+
+-- AddForeignKey
+ALTER TABLE "TB_USER" ADD CONSTRAINT "TB_USER_mediaId_fkey" FOREIGN KEY ("mediaId") REFERENCES "TB_MEDIA"("_id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "TB_USER_ASSIGNMENT" ADD CONSTRAINT "TB_USER_ASSIGNMENT_userId_fkey" FOREIGN KEY ("userId") REFERENCES "TB_USER"("_id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "TB_USER_ASSIGNMENT" ADD CONSTRAINT "TB_USER_ASSIGNMENT_assignmentsId_fkey" FOREIGN KEY ("assignmentsId") REFERENCES "TB_ASSIGNMENT"("_id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "TB_USER_ROLE" ADD CONSTRAINT "TB_USER_ROLE_userId_fkey" FOREIGN KEY ("userId") REFERENCES "TB_USER"("_id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "TB_USER_ROLE" ADD CONSTRAINT "TB_USER_ROLE_roleId_fkey" FOREIGN KEY ("roleId") REFERENCES "TB_ROLE"("_id") ON DELETE CASCADE ON UPDATE CASCADE;

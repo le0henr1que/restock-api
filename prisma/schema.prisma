@@ -1,0 +1,276 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model AuditLog {
+  id          Int           @id @default(autoincrement())
+  ip          String        @db.VarChar(255)
+  email       String        @db.VarChar(255)
+  url         String        @db.VarChar(2000)
+  information String        @db.VarChar(2000)
+  createdAt   DateTime      @default(now()) @db.Timestamptz(3)
+  action      LogActionEnum
+  status      LogStatusEnum
+  method      MethodEnum
+
+  @@map("TB_AUDIT_LOG")
+}
+
+model Organization {
+  id               String             @id @default(uuid()) @map("_id")
+  name             String             @db.VarChar(255)
+  createdAt        DateTime           @default(now()) @db.Timestamptz(3)
+  updatedAt        DateTime?          @updatedAt @db.Timestamptz(3)
+  planId           String?            @db.VarChar
+  ownerId          String?            @db.VarChar
+  status           StatusEnum         @default(ACTIVE)
+  deletedAt        DateTime?          @db.Timestamptz(3)
+  version          Int                @default(1)
+  OrganizationUser OrganizationUser[]
+  owner            User?              @relation("OrganizationOwner", fields: [ownerId], references: [id])
+  quotas           Quota[]
+  subscription     Subscription[]
+  // users            User[]             @relation("UserOrganizations")
+
+  @@map("TB_ORGANIZATION")
+}
+
+model OrganizationUser {
+  organizationId String           @db.VarChar
+  userId         String           @db.VarChar
+  organization   Organization     @relation(fields: [organizationId], references: [id])
+  user           User             @relation(fields: [userId], references: [id])
+  UserAssignment UserAssignment[] @relation("UserOrganizations")
+  Roles          UserRole[]       @relation("OrganizationUserRole")
+
+  @@id([organizationId, userId])
+}
+
+model Plan {
+  id             String         @id @default(uuid()) @map("_id")
+  planIdPlatform String?        @db.VarChar
+  name           String         @db.VarChar(255)
+  description    String?        @db.VarChar(255)
+  popular        Boolean        @default(false)
+  buttonText     String         @default("Assinar Plano") @db.VarChar(255)
+  benefitList    String[]       @db.VarChar(500)
+  price          Decimal        @db.Decimal(10, 2)
+  durationInDays Int
+  userLimit      Int
+  createdAt      DateTime       @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime?      @updatedAt @db.Timestamptz(3)
+  status         StatusEnum     @default(ACTIVE)
+  deletedAt      DateTime?      @db.Timestamptz(3)
+  version        Int            @default(1)
+  quota          Quota[]
+  subscriptions  Subscription[]
+
+  @@map("TB_PLAN")
+}
+
+model Subscription {
+  id             String       @id @default(uuid()) @map("_id")
+  planId         String       @db.VarChar
+  startDate      DateTime     @default(now()) @db.Timestamptz(3)
+  endDate        DateTime     @db.Timestamptz(3)
+  status         StatusEnum   @default(ACTIVE)
+  deletedAt      DateTime?    @db.Timestamptz(3)
+  version        Int          @default(1)
+  organizationId String       @db.VarChar
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  plan           Plan         @relation(fields: [planId], references: [id], onDelete: Cascade)
+
+  @@map("TB_SUBSCRIPTION")
+}
+
+model Quota {
+  id             String       @id @default(uuid()) @map("_id")
+  organizationId String       @db.VarChar
+  usersCreated   Int          @default(0)
+  createdAt      DateTime     @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime?    @updatedAt @db.Timestamptz(3)
+  planId         String       @db.VarChar
+  deletedAt      DateTime?    @db.Timestamptz(3)
+  version        Int          @default(1)
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  plan           Plan         @relation(fields: [planId], references: [id], onDelete: Cascade)
+
+  @@map("TB_QUOTA")
+}
+
+model User {
+  id                 String             @id @default(uuid()) @map("_id")
+  name               String             @db.VarChar(255)
+  email              String             @unique @db.VarChar(255)
+  password           String             @db.VarChar(255)
+  loginAttempts      Int                @default(0)
+  blocked            Boolean            @default(false)
+  ip                 String?            @db.VarChar(100)
+  createdAt          DateTime           @default(now()) @db.Timestamptz(3)
+  refreshToken       String?            @db.VarChar(255)
+  recoveryToken      String?            @db.VarChar(255)
+  emailVerificationToken String?        @db.VarChar(255) 
+  isEmailVerified    Boolean            @default(false)
+  hasCompletedCheckout Boolean          @default(false)
+  updatedAt          DateTime?          @updatedAt @db.Timestamptz(3)
+  deletedAt          DateTime?          @db.Timestamptz(3)
+  version            Int                @default(1)
+  mediaId            String?
+  status             StatusEnum         @default(ACTIVE)
+  organizationUser   OrganizationUser[]
+  cell               Cell?
+  ownedOrganizations Organization[]     @relation("OrganizationOwner")
+  Media              Media?             @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+  // organizations      Organization[]     @relation("UserOrganizations")
+
+  @@map("TB_USER")
+}
+
+model Cell {
+  id        String     @id @default(uuid()) @map("_id")
+  createdAt DateTime   @default(now()) @db.Timestamptz(3)
+  deletedAt DateTime?  @db.Timestamptz(3)
+  name      String     @db.VarChar(255)
+  status    StatusEnum @default(ACTIVE)
+  userId    String     @unique
+  user      User       @relation(fields: [userId], references: [id])
+  persons   Person[]
+
+  @@map("TB_CELL")
+}
+
+model Person {
+  id         String         @id @default(uuid()) @map("_id")
+  createdAt  DateTime       @default(now()) @db.Timestamptz(3)
+  deletedAt  DateTime?      @db.Timestamptz(3)
+  name       String         @db.VarChar(255)
+  personType PersonTypeEnum @default(ADULTO)
+  isHost     Boolean        @default(false)
+  isVisitor  Boolean        @default(false)
+  status     StatusEnum     @default(ACTIVE)
+  cellId     String?        @db.VarChar
+  cell       Cell?          @relation(fields: [cellId], references: [id])
+
+  @@map("TB_PERSON")
+}
+
+model UserAssignment {
+  id                             String            @id @default(uuid()) @map("_id")
+  create                         Boolean           @default(false)
+  read                           Boolean           @default(false)
+  update                         Boolean           @default(false)
+  delete                         Boolean           @default(false)
+  assignmentsId                  String            @db.VarChar
+  organizationUserId             String            @db.VarChar
+  organizationId                 String?
+  userId                         String?
+  organizationUserRelation       OrganizationUser? @relation("UserOrganizations", fields: [organizationId, userId], references: [organizationId, userId])
+  Assignment                     Assignment        @relation(fields: [assignmentsId], references: [id], onDelete: Cascade)
+
+  @@map("TB_USER_ASSIGNMENT")
+}
+
+model Assignment {
+  id                 String           @id @default(uuid()) @map("_id")
+  createdAt          DateTime         @default(now()) @db.Timestamptz(3)
+  deletedAt          DateTime?        @db.Timestamptz(3)
+  name               AssignmentsEnum  @unique
+  status             StatusEnum       @default(ACTIVE)
+  ProfileAssignments UserAssignment[]
+
+  @@map("TB_ASSIGNMENT")
+}
+
+model UserRole {
+  id                             String            @id @default(uuid()) @map("_id")
+  roleId                         String            @db.VarChar
+  organizationUserId             String            @db.VarChar
+  organizationId                 String?
+  userId                         String?
+  organizationUserRelation       OrganizationUser? @relation("OrganizationUserRole", fields: [organizationId, userId], references: [organizationId, userId])
+  role                           Role              @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@map("TB_USER_ROLE")
+}
+
+model Role {
+  id        String     @id @default(uuid()) @map("_id")
+  createdAt DateTime   @default(now()) @db.Timestamptz(3)
+  deletedAt DateTime?  @db.Timestamptz(3)
+  name      RoleEnum   @unique
+  status    StatusEnum @default(ACTIVE)
+  UserRole  UserRole[]
+
+  @@map("TB_ROLE")
+}
+
+model Media {
+  id          String   @id @default(uuid()) @map("_id")
+  url         String   @db.VarChar(800)
+  createdDate DateTime @default(now()) @db.Timestamptz(3)
+  User        User[]
+
+  @@map("TB_MEDIA")
+}
+
+enum RoleEnum {
+  USER
+  ADMIN
+}
+
+enum StatusEnum {
+  ACTIVE
+  PENDING
+  INACTIVE
+}
+
+enum PersonTypeEnum {
+  CRIANCA
+  ADULTO
+}
+
+enum LogActionEnum {
+  LOGIN
+  CREATE
+  UPDATE
+  DELETE
+  INACTIVE
+  REACTIVE
+  LOGOUT
+  PASSWORD_RESET
+  FIRST_ACCESS
+  RESEND_EMAIL
+  CHANGE_PERMISSION
+  CHANGE_PASSWORD
+  SEND_EMAIL_RECOVERY_PASSWORD
+  CHANGE_PERSONAL_INFORMATION
+  REFRESH_TOKEN
+  BLOCK
+  UNBLOCK
+  MULTIPLE_LOGIN
+  DISABLED_USER
+}
+
+enum LogStatusEnum {
+  SUCCESS
+  ERROR
+}
+
+enum MethodEnum {
+  GET
+  POST
+  PUT
+  PATCH
+  DELETE
+}
+
+enum AssignmentsEnum {
+  USER
+  ORGANIZATION
+  PLAN
+}

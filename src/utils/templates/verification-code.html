@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Código de verificação</title>
+    <style>
+      {{BASE_CSS}}
+      {{CSS}}
+    </style>
+  </head>
+
+  <body>
+    <div class="main">
+      <header>
+        <h2 class="title uppercase text-shadow">Código de verificação</h2>
+      </header>
+
+      <section
+        class="text-grey-color"
+        aria-labelledby="registration-confirmation"
+      >
+        <div class="text-shadow">
+          <h3 id="registration-confirmation" class="font-16">
+            Olá, {{userName}}
+          </h3>
+          <p>
+            Quase lá! Utilize o código abaixo para confirmar seu cadastro na
+            plataforma.
+          </p>
+        </div>
+
+        <div class="your-password">
+          <h4 class="full-width">{{userCode}}</h4>
+        </div>
+      </section>
+
+      <footer>
+        <p class="margin-top-24 text-grey-color text-shadow">Atenciosamente</p>
+      </footer>
+    </div>
+  </body>
+</html>
